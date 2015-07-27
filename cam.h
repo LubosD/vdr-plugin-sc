@@ -144,6 +144,8 @@ typedef int caid_t;
 
 #define MAX_CW_IDX        16
 #define MAX_SPLIT_SID     16
+// Maximum amount of custom prg IDs/SIDs per transponder
+#define MAX_CUSTOM_PMT_PRGIDS	32
 
 #ifndef SASC
 class cCam : public cCiAdapter, public cSimpleItem {
@@ -177,6 +179,7 @@ private:
   cSimpleList<cEcmHandler> handlerList;
   cLogger *logger;
   cHookManager *hookman;
+  int customPmtPrgIds[MAX_CUSTOM_PMT_PRGIDS];
   int source, transponder, liveVpid, liveApid;
   int splitSid[MAX_SPLIT_SID+1];
   unsigned char indexMap[MAX_CW_IDX], lastCW[MAX_CW_IDX][2*8];
@@ -186,6 +189,7 @@ private:
   void RemHandler(cEcmHandler *handler);
   int GetFreeIndex(void);
   void LogStartup(void);
+  void PushCustomPMTs();
 protected:
 #ifndef SASC
   virtual int Read(unsigned char *Buffer, int MaxLength);
@@ -223,6 +227,7 @@ public:
   void PostTune(void);
   void SetPid(int type, int pid, bool on);
   char *CurrentKeyStr(int num, const char **id);
+  bool UsesCustomPMTForSid(int sid);
 #ifndef SASC
   bool OwnSlot(const cCamSlot *slot) const;
   cDeCSA *DeCSA(void) const { return decsa; }

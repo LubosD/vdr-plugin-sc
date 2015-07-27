@@ -1,0 +1,9 @@
+; This file is used to define custom Program Map Tables (PMTs)
+; for services where PMT is missing, broken or encrypted.
+;
+; FORMAT:
+; Freq:Pol:Position:SID CAID:VPID:APID1,APIDn:TXT
+;
+; The following example is BBC One Scotland (http://en.kingofsat.net/pos-27.5W.php)
+
+11495:v:S27.5W:4220 2600:4101:4102,4106:4105

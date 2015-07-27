@@ -38,6 +38,7 @@
 #include "override.h"
 #include "misc.h"
 #include "log-core.h"
+#include "custompmt.h"
 #ifndef SASC
 #include "FFdecsa/FFdecsa.h"
 #endif
@@ -2028,9 +2029,14 @@ void cScCamSlot::Process(const unsigned char *data, int len)
           cam->Stop();
           }
         else if(ci_cmd==0x01 || (ci_cmd==-1 && prg->sid!=0 && (ca_lm==0x03 || ca_lm==0x04 || ca_lm==0x05))) {
-          PRINTF(L_CORE_CI,"%s.%d set CAM decrypt (prg %d)",devId,slot,prg->sid);
-          cam->AddPrg(prg);
+          if (!cam->UsesCustomPMTForSid(prg->sid))
+          {
+            PRINTF(L_CORE_CI,"%s.%d set CAM decrypt (prg %d)",devId,slot,prg->sid);
+            cam->AddPrg(prg); // TODO: comment this out!
           }
+          else
+            PRINTF(L_CORE_CI,"%s.%d custom PMT override in use (prg %d)",devId,slot,prg->sid);
+        }
         else PRINTF(L_CORE_CI,"%s.%d no action taken",devId,slot);
         delete prg;
         }
@@ -2137,6 +2143,7 @@ cCam::cCam(cDevice *Device, int Adapter, int Frontend, const char *DevId, cScDev
   memset(lastCW,0,sizeof(lastCW));
   memset(indexMap,0,sizeof(indexMap));
   memset(splitSid,0,sizeof(splitSid));
+  memset(customPmtPrgIds,0,sizeof(customPmtPrgIds));
   cams.Register(this);
 }
 
@@ -2360,6 +2367,78 @@ void cCam::Tune(const cChannel *channel)
     Stop();
     }
   else PRINTF(L_CORE_PIDS,"%s: tune to same source/transponder",devId);
+
+  PushCustomPMTs();
+}
+
+void cCam::PushCustomPMTs()
+{
+  // Custom PMT support
+  // Find all custom PMT entries that match the currently tuned source & transponder
+  // and use them.
+  cCustomPMT* cpmt;
+  int count = 0;
+
+  memset(customPmtPrgIds, 0, sizeof(customPmtPrgIds));
+  cpmt = custompmts.First();
+
+  while (cpmt != 0)
+  {
+    if (cpmt->source == source && cpmt->transponder == transponder)
+	{
+      cPrg prg(cpmt->prgId, false);
+      cPrgPid* pid;
+      unsigned char caDescr[6];
+
+      caDescr[0] = 9;
+      caDescr[1] = 4;
+	  caDescr[2] = (unsigned char)(cpmt->caid >> 8);
+	  caDescr[3] = (unsigned char)(cpmt->caid & 0xff);
+	  caDescr[4] = 0;
+	  caDescr[5] = 0;
+
+      prg.caDescr.Set(caDescr, sizeof(caDescr));
+
+      // 2=video, 4=audio
+      pid=new cPrgPid(2, cpmt->vpid);
+      prg.pids.Add(pid);
+
+      for (int i = 0; i < sizeof(cpmt->apid)/sizeof(cpmt->apid[0]); i++)
+      {
+        if (cpmt->apid[i] != 0)
+        {
+          pid = new cPrgPid(4, cpmt->apid[i]);
+          prg.pids.Add(pid);
+        }
+      }
+
+      if (cpmt->txt != 0)
+      {
+        pid = new cPrgPid(6, cpmt->txt);
+        prg.pids.Add(pid);
+      }
+
+      AddPrg(&prg);
+	  customPmtPrgIds[count] = cpmt->prgId;
+
+      count++;
+    }
+
+
+	cpmt = custompmts.Next(cpmt);
+  }
+
+  PRINTF(L_CORE_PIDS,"%s: found %d custom PMTs for this source/tp",devId, count);
+}
+
+bool cCam::UsesCustomPMTForSid(int sid)
+{
+  for (int i = 0; i < sizeof(customPmtPrgIds)/sizeof(customPmtPrgIds[0]); i++)
+  {
+    if (customPmtPrgIds[i] == sid)
+      return true;
+  }
+  return false;
 }
 
 void cCam::PostTune(void)
