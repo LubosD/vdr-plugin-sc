@@ -55,6 +55,8 @@ bool cCustomPMT::Parse(const char *line)
 
 				if (*apidPtr != ',')
 					break;
+				else
+					apidPtr++;
 			}
 			return true;
 		}

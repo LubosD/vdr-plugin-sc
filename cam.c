@@ -2368,10 +2368,10 @@ void cCam::Tune(const cChannel *channel)
     }
   else PRINTF(L_CORE_PIDS,"%s: tune to same source/transponder",devId);
 
-  PushCustomPMTs();
+  PushCustomPMT(channel->Sid());
 }
 
-void cCam::PushCustomPMTs()
+void cCam::PushCustomPMT(int sid)
 {
   // Custom PMT support
   // Find all custom PMT entries that match the currently tuned source & transponder
@@ -2384,7 +2384,8 @@ void cCam::PushCustomPMTs()
 
   while (cpmt != 0)
   {
-    if (cpmt->source == source && cpmt->transponder == transponder)
+    if (cpmt->source == source && cpmt->transponder == transponder
+          && cpmt->prgId == sid)
 	{
       cPrg prg(cpmt->prgId, false);
       cPrgPid* pid;

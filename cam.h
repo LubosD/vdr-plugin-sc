@@ -189,7 +189,7 @@ private:
   void RemHandler(cEcmHandler *handler);
   int GetFreeIndex(void);
   void LogStartup(void);
-  void PushCustomPMTs();
+  void PushCustomPMT(int sid);
 protected:
 #ifndef SASC
   virtual int Read(unsigned char *Buffer, int MaxLength);
