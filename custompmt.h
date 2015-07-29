@@ -29,7 +29,7 @@ public:
 
 	int caid;
 	int source, prgId, transponder;
-	int vpid, txt;
+	int vpid, txt, pmt;
 	int apid[5];
 };
 

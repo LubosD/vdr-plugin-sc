@@ -2007,7 +2007,7 @@ void cScCamSlot::Process(const unsigned char *data, int len)
           }
         LBEND();
         PRINTF(L_CORE_CI,"%s.%d got CA pmt ciCmd=%d caLm=%d",devId,slot,ci_cmd,ca_lm);
-        if(doReply && (ci_cmd==0x03 || (ci_cmd==0x01 && ca_lm==0x03))) {
+        if(doReply && (ci_cmd==0x03 || (ci_cmd==0x01 && ca_lm==0x03)) || cam->UsesCustomPMTForSid(prg->sid)) {
           unsigned char *b;
           if((b=frame.GetBuff(4+11))) {
             b[0]=0xa0; b[2]=tcid;
@@ -2032,7 +2032,7 @@ void cScCamSlot::Process(const unsigned char *data, int len)
           if (!cam->UsesCustomPMTForSid(prg->sid))
           {
             PRINTF(L_CORE_CI,"%s.%d set CAM decrypt (prg %d)",devId,slot,prg->sid);
-            cam->AddPrg(prg); // TODO: comment this out!
+            cam->AddPrg(prg);
           }
           else
             PRINTF(L_CORE_CI,"%s.%d custom PMT override in use (prg %d)",devId,slot,prg->sid);
@@ -2401,8 +2401,11 @@ void cCam::PushCustomPMT(int sid)
       prg.caDescr.Set(caDescr, sizeof(caDescr));
 
       // 2=video, 4=audio
-      pid=new cPrgPid(2, cpmt->vpid);
-      prg.pids.Add(pid);
+      if (cpmt->vpid != 0)
+      {
+        pid=new cPrgPid(2, cpmt->vpid);
+        prg.pids.Add(pid);
+      }
 
       for (int i = 0; i < sizeof(cpmt->apid)/sizeof(cpmt->apid[0]); i++)
       {
@@ -2416,6 +2419,12 @@ void cCam::PushCustomPMT(int sid)
       if (cpmt->txt != 0)
       {
         pid = new cPrgPid(6, cpmt->txt);
+        prg.pids.Add(pid);
+      }
+
+      if (cpmt->pmt != 0)
+      {
+        pid = new cPrgPid(0x0D, cpmt->pmt);
         prg.pids.Add(pid);
       }
 

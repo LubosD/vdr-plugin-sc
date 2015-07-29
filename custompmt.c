@@ -41,7 +41,7 @@ bool cCustomPMT::Parse(const char *line)
 		while (transponder > 20000) transponder /= 1000;
 		if (cSource::IsSat(source)) transponder=cChannel::Transponder(transponder, pol);
 
-		if (sscanf(line, "%04x:%d:%31[^:]:%d", &caid, &vpid, apidBuf, &txt) >= 2 && apidBuf[0] != '\0')
+		if (sscanf(line, "%04x:%d:%d:%31[^:]:%d", &caid, &pmt, &vpid, apidBuf, &txt) >= 3 && apidBuf[0] != '\0')
 		{
 			char* apidPtr = apidBuf;
 			int count = 0;
