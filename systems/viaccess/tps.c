@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <libsi/section.h>
+#include <vdr/libsi/section.h>
 
 #include "viaccess.h"
 #include "log-viaccess.h"
